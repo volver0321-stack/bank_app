@@ -1,6 +1,7 @@
 package com.bank_app.backend.auth_users.entity;
 
 
+import com.bank_app.backend.account.entity.Account;
 import com.bank_app.backend.role.entity.Role;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
