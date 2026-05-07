@@ -1,12 +1,14 @@
 package com.bank_app.backend.account.dto;
 
 import com.bank_app.backend.auth_users.dto.UserDTO;
-import com.bank_app.backend.auth_users.entity.User;
 import com.bank_app.backend.enums.AccountStatus;
 import com.bank_app.backend.enums.AccountType;
 import com.bank_app.backend.enums.Currency;
-import com.fasterxml.jackson.annotation.*;
-import jakarta.persistence.*;
+import com.bank_app.backend.transactions.dto.TransactionDTO;
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -14,7 +16,7 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
+import java.util.List;
 
 
 @Data
@@ -42,7 +44,7 @@ public class AccountDTO {
     @JsonManagedReference
     private List<TransactionDTO> transactions;
 
-    private  LocalDateTime closedAt;
+    private LocalDateTime closedAt;
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

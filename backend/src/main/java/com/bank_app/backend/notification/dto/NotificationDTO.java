@@ -1,0 +1,34 @@
+package com.bank_app.backend.notification.dto;
+
+import com.bank_app.backend.enums.NotificationType;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import jakarta.validation.constraints.NotBlank;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.Map;
+
+@Data
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
+@JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonIgnoreProperties(ignoreUnknown = true)
+public class NotificationDTO {
+
+    private Long id;
+    private String subject;
+    @NotBlank(message = "Recipient is required")
+    private String recipient;
+    private BigDecimal body;
+    private NotificationType type;
+    private LocalDateTime createdAt;
+
+    private String templateName;
+    private Map<String, Object> templateVariables;
+}
