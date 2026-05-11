@@ -19,8 +19,8 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
-    @ExceptionHandler(NotFountException.class)
-    public ResponseEntity<Response<?>> handleNotFoundException(NotFountException ex) {
+    @ExceptionHandler(NotFoundException.class)
+    public ResponseEntity<Response<?>> handleNotFoundException(NotFoundException ex) {
         Response<?> response = Response.builder()
                 .statusCode(HttpStatus.NOT_FOUND.value())
                 .message(ex.getMessage())
