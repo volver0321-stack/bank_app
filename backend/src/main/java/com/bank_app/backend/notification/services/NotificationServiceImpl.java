@@ -56,15 +56,15 @@ public class NotificationServiceImpl implements NotificationService {
             javaMailSender.send(mimeMessage);
 
             //save
-//            Notification notification = Notification.builder()
-//                    .recipient(notificationDTO.getRecipient())
-//                    .subject(notificationDTO.getSubject())
-//                    .body(notificationDTO.getBody())
-//                    .type(NotificationType.EMAIL)
-//                    .user(user)
-//                    .build();
+            Notification notification = Notification.builder()
+                    .recipient(notificationDTO.getRecipient())
+                    .subject(notificationDTO.getSubject())
+                    .body(notificationDTO.getBody())
+                    .type(NotificationType.EMAIL)
+                    .user(user)
+                    .build();
 
-//            notificationRepo.save(notification);
+            notificationRepo.save(notification);
 
         } catch (MessagingException e) {
             log.error(e.getMessage());

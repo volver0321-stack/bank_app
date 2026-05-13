@@ -13,27 +13,11 @@ import org.springframework.scheduling.annotation.EnableAsync;
 
 @SpringBootApplication
 @EnableAsync
-@RequiredArgsConstructor
 public class BackendApplication {
-
-	private final NotificationService notificationService;
 
 	public static void main(String[] args) {
 		SpringApplication.run(BackendApplication.class, args);
 	}
 
-	@Bean
-	CommandLineRunner runner(){
-		return args -> {
-			NotificationDTO notificationDTO = NotificationDTO.builder()
-					.recipient("nakamura.12090503@gmail.com")
-					.subject("hello")
-					.body("hello body")
-					.type(NotificationType.EMAIL)
-					.build();
-
-			notificationService.sendEmail(notificationDTO,new User());
-		};
-	}
 
 }
