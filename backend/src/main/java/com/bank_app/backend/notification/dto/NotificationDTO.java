@@ -25,7 +25,7 @@ public class NotificationDTO {
     private String subject;
     @NotBlank(message = "Recipient is required")
     private String recipient;
-    private BigDecimal body;
+    private String body;
     private NotificationType type;
     private LocalDateTime createdAt;
 

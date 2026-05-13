@@ -28,7 +28,7 @@ public class Notification {
     private Long id;
     private String subject;
     private String recipient;
-    private BigDecimal body;
+    private String body;
     @Enumerated(EnumType.STRING)
     private NotificationType type;
     @ManyToOne(fetch = FetchType.LAZY)
