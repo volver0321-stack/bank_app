@@ -1,10 +1,11 @@
-package com.bank_app.backend.role.services;
+package com.bank_app.backend.role.services.impl;
 
 import com.bank_app.backend.exceptions.BadRequestException;
 import com.bank_app.backend.exceptions.NotFoundException;
 import com.bank_app.backend.res.Response;
 import com.bank_app.backend.role.entity.Role;
 import com.bank_app.backend.role.repo.RoleRepo;
+import com.bank_app.backend.role.services.RoleService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;

@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Welcome to Bank App</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f4f6f8;
+            font-family: Arial, sans-serif;
+            color: #333;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 40px auto;
+            background-color: #ffffff;
+            padding: 32px;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+        }
+
+        h2 {
+            margin-top: 0;
+            color: #1f2937;
+        }
+
+        p {
+            line-height: 1.6;
+            font-size: 15px;
+        }
+
+        .button {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 12px 20px;
+            background-color: #2563eb;
+            color: #ffffff;
+            text-decoration: none;
+            border-radius: 6px;
+        }
+
+        .footer {
+            margin-top: 32px;
+            font-size: 12px;
+            color: #777;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h2>ようこそ、<span th:text="${name}">User</span>さん</h2>
+
+    <p>Bank Appへの登録が完了しました。</p>
+
+    <p>
+        口座情報の確認、入出金履歴の管理、送金などを安全に行えます。
+    </p>
+
+    <p>
+        さっそくログインして、アカウント情報を確認しましょう。
+    </p>
+
+    <a href="#" class="button">ログインする</a>
+
+    <div class="footer">
+        <p>このメールは自動送信されています。</p>
+        <p>&copy; 2026 Bank App</p>
+    </div>
+</div>
+</body>
+</html>
