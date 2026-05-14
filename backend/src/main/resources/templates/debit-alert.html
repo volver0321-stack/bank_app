@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Debit Alert</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f4f6f8;
+            font-family: Arial, sans-serif;
+            color: #1f2937;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 40px auto;
+            background-color: #ffffff;
+            padding: 32px;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+        }
+
+        .status {
+            display: inline-block;
+            margin-bottom: 16px;
+            padding: 6px 10px;
+            background-color: #fff7ed;
+            color: #c2410c;
+            border: 1px solid #fed7aa;
+            border-radius: 999px;
+            font-size: 13px;
+            font-weight: bold;
+        }
+
+        h2 {
+            margin: 0 0 16px;
+            color: #111827;
+            font-size: 24px;
+        }
+
+        p {
+            font-size: 15px;
+            line-height: 1.7;
+        }
+
+        .amount {
+            margin: 24px 0;
+            padding: 22px;
+            background-color: #fff7ed;
+            border: 1px solid #fed7aa;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .amount-label {
+            margin-bottom: 8px;
+            color: #9a3412;
+            font-size: 13px;
+            font-weight: bold;
+        }
+
+        .amount-value {
+            color: #c2410c;
+            font-size: 30px;
+            font-weight: bold;
+        }
+
+        .details {
+            margin: 24px 0;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .row {
+            display: flex;
+            justify-content: space-between;
+            gap: 16px;
+            padding: 14px 16px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .row:last-child {
+            border-bottom: 0;
+        }
+
+        .label {
+            color: #6b7280;
+            font-size: 14px;
+        }
+
+        .value {
+            font-weight: bold;
+            text-align: right;
+        }
+
+        .notice {
+            margin-top: 24px;
+            padding: 14px 16px;
+            background-color: #fef2f2;
+            border: 1px solid #fecaca;
+            border-radius: 8px;
+            color: #b91c1c;
+            font-size: 14px;
+        }
+
+        .footer {
+            margin-top: 32px;
+            font-size: 12px;
+            color: #6b7280;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="status">出金通知</div>
+
+    <h2><span th:text="${name}">User</span>さんの口座から出金がありました</h2>
+
+    <p>
+        Bank App をご利用いただきありがとうございます。
+        お客さまの口座で出金取引が完了しました。
+    </p>
+
+    <div class="amount">
+        <div class="amount-label">出金額</div>
+        <div class="amount-value">
+            -<span th:text="${amount}">0.00</span>
+        </div>
+    </div>
+
+    <div class="details">
+        <div class="row">
+            <span class="label">口座番号</span>
+            <span class="value" th:text="${accountNumber}">0000000000</span>
+        </div>
+        <div class="row">
+            <span class="label">現在の残高</span>
+            <span class="value" th:text="${balance}">0.00</span>
+        </div>
+    </div>
+
+
+    <div class="footer">
+        <p>このメールは自動送信されています。</p>
+        <p>&copy; 2026 Bank App</p>
+    </div>
+</div>
+</body>
+</html>

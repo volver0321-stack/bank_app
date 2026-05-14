@@ -117,6 +117,8 @@ public class TransactionServiceImpl implements TransactionService {
         templateVariables.put("amount", saveTxn.getAmount());
         templateVariables.put("accountNumber", saveTxn.getAccount().getAccountNumber());
         templateVariables.put("balance", saveTxn.getAccount().getBalance());
+        templateVariables.put("sourceAccount", saveTxn.getSourceAccount());
+        templateVariables.put("destinationAccount", saveTxn.getDestinationAccount());
 
         if(saveTxn.getTransactionType() == TransactionType.DEPOSIT) {
             subject = "Credit Alert";
