@@ -1,7 +1,5 @@
 package com.bank_app.backend.auth_users.services.impl;
 
-import com.bank_app.backend.account.entity.Account;
-import com.bank_app.backend.account.repo.AccountRepo;
 import com.bank_app.backend.auth_users.dto.LoginRequest;
 import com.bank_app.backend.auth_users.dto.LoginResponse;
 import com.bank_app.backend.auth_users.dto.RegistrationRequest;
@@ -22,7 +20,6 @@ import com.bank_app.backend.res.Response;
 import com.bank_app.backend.role.entity.Role;
 import com.bank_app.backend.role.repo.RoleRepo;
 import com.bank_app.backend.security.TokenService;
-import io.jsonwebtoken.security.Password;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -48,7 +45,7 @@ public class AuthServiceImpl implements AuthService {
     private final TokenService tokenService;
     private final NotificationService notificationService;
 
-    private final CodeGenerator  codeGenerator;
+    private final CodeGenerator codeGenerator;
     private final PasswordResetCodeRepo passwordResetCodeRepo;
     @Value("${password.reset.link}")
     private String resetLink;
@@ -56,17 +53,17 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public Response<String> register(RegistrationRequest request) {
         List<Role> roles;
-        if(request.getRoles() == null || request.getRoles().isEmpty()){
+        if (request.getRoles() == null || request.getRoles().isEmpty()) {
             Role defaultRole = roleRepo.findByName("CUSTOMER")
                     .orElseThrow(() -> new NotFoundException("CUSTOMER ROLE NOT FOUND"));
-            roles =  Collections.singletonList(defaultRole);
+            roles = Collections.singletonList(defaultRole);
         } else {
             roles = request.getRoles().stream()
                     .map(roleName -> roleRepo.findByName(roleName).orElseThrow(() -> new NotFoundException("ROLE NOT FOUND" + roleName)))
                     .toList();
         }
 
-        if(userRepo.findByEmail(request.getEmail()).isPresent()) {
+        if (userRepo.findByEmail(request.getEmail()).isPresent()) {
             throw new BadRequestException("EMAIL ALREADY EXISTS");
         }
 
@@ -83,11 +80,11 @@ public class AuthServiceImpl implements AuthService {
         User savedUser = userRepo.save(user);
 
 //         todo auth generate an account number for the user
-        Account savedAccount = accountServise.createAccount(AccountType.SAVINGS, savedUser);
+//        Account savedAccount = accountServise.createAccount(AccountType.SAVINGS, savedUser);
 
         //send a welcome email
-        Map<String,Object> map = new HashMap<>();
-        map.put("name",savedUser.getFirstName());
+        Map<String, Object> map = new HashMap<>();
+        map.put("name", savedUser.getFirstName());
 
         NotificationDTO notificationDTO = NotificationDTO.builder()
                 .recipient(savedUser.getEmail())
@@ -96,13 +93,13 @@ public class AuthServiceImpl implements AuthService {
                 .templateVariables(map)
                 .build();
 
-        notificationService.sendEmail(notificationDTO,savedUser);
+        notificationService.sendEmail(notificationDTO, savedUser);
 
         //send account creation/detaails email
-        Map<String,Object> accountVars = new HashMap<>();
-        accountVars.put("name",savedUser.getFirstName());
-        accountVars.put("accountNumber",savedAccount.getAccountNumber());
-        accountVars.put("accountType",AccountType.SAVINGS.getLabel());
+        Map<String, Object> accountVars = new HashMap<>();
+        accountVars.put("name", savedUser.getFirstName());
+//        accountVars.put("accountNumber", savedAccount.getAccountNumber());
+        accountVars.put("accountType", AccountType.SAVINGS.getLabel());
         accountVars.put("currency", Currency.USD);
 
         NotificationDTO accountCreatedEmail = NotificationDTO.builder()
@@ -112,12 +109,12 @@ public class AuthServiceImpl implements AuthService {
                 .templateVariables(accountVars)
                 .build();
 
-        notificationService.sendEmail(accountCreatedEmail,savedUser);
+        notificationService.sendEmail(accountCreatedEmail, savedUser);
 
         return Response.<String>builder()
                 .statusCode(HttpStatus.OK.value())
                 .message("Your account has been created successfully")
-                .data("Email of your account details has been sent to you. Your account number is :" + savedAccount.getAccountNumber())
+//                .data("Email of your account details has been sent to you. Your account number is :" + savedAccount.getAccountNumber())
                 .build();
 
     }
@@ -126,15 +123,15 @@ public class AuthServiceImpl implements AuthService {
     public Response<LoginResponse> login(LoginRequest loginRequest) {
         String email = loginRequest.getEmail();
         String password = loginRequest.getPassword();
-        
+
         User user = userRepo.findByEmail(email).orElseThrow(() -> new NotFoundException("EMAIL NOT FOUND"));
-        
-        if(!passwordEncoder.matches(password, user.getPassword())) {
+
+        if (!passwordEncoder.matches(password, user.getPassword())) {
             throw new BadRequestException("INVALID PASSWORD");
         }
-        
+
         String token = tokenService.generateToken(user.getEmail());
-        LoginResponse loginResponse= LoginResponse.builder()
+        LoginResponse loginResponse = LoginResponse.builder()
                 .roles(user.getRoles().stream().map(Role::getName).toList())
                 .token(token)
                 .build();
@@ -163,9 +160,9 @@ public class AuthServiceImpl implements AuthService {
         passwordResetCodeRepo.save(resetCode);
 
         // send email reset link out
-        Map<String,Object> templateVariables = new HashMap<>();
-        templateVariables.put("name",user.getFirstName());
-        templateVariables.put("resetLink",resetLink + code);
+        Map<String, Object> templateVariables = new HashMap<>();
+        templateVariables.put("name", user.getFirstName());
+        templateVariables.put("resetLink", resetLink + code);
 
         NotificationDTO notificationDTO = NotificationDTO.builder()
                 .recipient(user.getEmail())
@@ -174,7 +171,7 @@ public class AuthServiceImpl implements AuthService {
                 .templateVariables(templateVariables)
                 .build();
 
-        notificationService.sendEmail(notificationDTO,user);
+        notificationService.sendEmail(notificationDTO, user);
 
         return Response.builder()
                 .statusCode(HttpStatus.OK.value())
@@ -190,14 +187,14 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @Transactional
     public Response<?> updatePasswordViaResetCode(ResetPasswordRequest resetPasswordRequest) {
-        String code  = resetPasswordRequest.getCode();
+        String code = resetPasswordRequest.getCode();
         String newPassword = resetPasswordRequest.getNewPassword();
 
         //find and validate code
         PasswordResetCode resetCode = passwordResetCodeRepo.findByCode(code).orElseThrow(() -> new BadRequestException("Invalid reset code"));
 
         //check expiration first
-        if(resetCode.getExpiryDate().isBefore(LocalDateTime.now())) {
+        if (resetCode.getExpiryDate().isBefore(LocalDateTime.now())) {
             passwordResetCodeRepo.delete(resetCode);
             throw new BadRequestException("Reset code has expired");
         }
@@ -210,8 +207,8 @@ public class AuthServiceImpl implements AuthService {
         //delete the code
         passwordResetCodeRepo.delete(resetCode);
 
-        Map<String,Object> templateVariables = new HashMap<>();
-        templateVariables.put("name",user.getFirstName());
+        Map<String, Object> templateVariables = new HashMap<>();
+        templateVariables.put("name", user.getFirstName());
 
         NotificationDTO notificationDTO = NotificationDTO.builder()
                 .recipient(user.getEmail())
@@ -220,7 +217,7 @@ public class AuthServiceImpl implements AuthService {
                 .templateVariables(templateVariables)
                 .build();
 
-        notificationService.sendEmail(notificationDTO,user);
+        notificationService.sendEmail(notificationDTO, user);
 
         return Response.builder()
                 .statusCode(HttpStatus.OK.value())
