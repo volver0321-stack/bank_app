@@ -14,7 +14,7 @@ public class TransactionRequest {
     private String accountNumber;
     private String description;
 
-    private String descriptionAccountNumber; //
+    private String destinationAccountNumber; //
 
 
 }

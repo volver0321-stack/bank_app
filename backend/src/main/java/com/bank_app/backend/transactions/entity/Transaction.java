@@ -9,7 +9,9 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -38,12 +40,16 @@ public class Transaction {
     @Column(nullable = false)
     private LocalDateTime transactionDate;
 
+    private String description;
+
 
     @Enumerated(EnumType.STRING)
     private TransactionStatus status;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "account_id", nullable = false)
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
     private Account account;
 
     //for transfer

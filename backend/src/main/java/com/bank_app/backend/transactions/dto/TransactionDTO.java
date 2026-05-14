@@ -26,6 +26,7 @@ public class TransactionDTO {
 
     private LocalDateTime transactionDate;
 
+    private String description;
 
     private TransactionStatus status;
 

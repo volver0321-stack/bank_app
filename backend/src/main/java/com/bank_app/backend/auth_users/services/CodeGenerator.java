@@ -27,7 +27,7 @@ public class CodeGenerator {
     }
 
     private String generateRandomCode() {
-        StringBuilder sb = new StringBuilder(ALPHA_NUMBER);
+        StringBuilder sb = new StringBuilder();
         SecureRandom random = new SecureRandom();
 
         for(int i = 0; i < CODE_LENGTH; i++){
