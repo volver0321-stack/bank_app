@@ -15,9 +15,4 @@ public interface AccountMapper {
     @Mapping(target = "user", ignore = true)
     AccountDTO toDTO(Account account);
 
-    @Mapping(target = "account", ignore = true)
-    TransactionDTO toTransactionDTO(Transaction transaction);
-
-    @Mapping(target = "account", ignore = true)
-    Transaction toTransaction(TransactionDTO transactionDTO);
 }

@@ -6,6 +6,7 @@ import com.bank_app.backend.auth_users.entity.User;
 import com.bank_app.backend.auth_users.services.UserService;
 import com.bank_app.backend.enums.TransactionStatus;
 import com.bank_app.backend.enums.TransactionType;
+import com.bank_app.backend.exceptions.BadRequestException;
 import com.bank_app.backend.exceptions.InsufficientBalanceException;
 import com.bank_app.backend.exceptions.InvalidTransactionException;
 import com.bank_app.backend.exceptions.NotFoundException;
@@ -15,13 +16,21 @@ import com.bank_app.backend.res.Response;
 import com.bank_app.backend.transactions.dto.TransactionDTO;
 import com.bank_app.backend.transactions.dto.TransactionRequest;
 import com.bank_app.backend.transactions.entity.Transaction;
+import com.bank_app.backend.transactions.mapper.TransactionMapper;
 import com.bank_app.backend.transactions.repo.TransactionRepo;
 import com.bank_app.backend.transactions.service.TransactionService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -35,16 +44,24 @@ public class TransactionServiceImpl implements TransactionService {
     private final NotificationService notificationService;
     private final AccountRepo accountRepo;
     private final UserService userService;
+    private final TransactionMapper transactionMapper;
     
     @Override
     @Transactional
     public Response<?> createTransaction(TransactionRequest transactionRequest) {
-        
-        
+        if (transactionRequest.getTransactionType() == null) {
+            throw new BadRequestException("Transaction type is required");
+        }
+
+        if (transactionRequest.getAmount() == null || transactionRequest.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new BadRequestException("Amount must be greater than zero");
+        }
+
         Transaction transaction = new Transaction();
         transaction.setTransactionType(transactionRequest.getTransactionType());
         transaction.setAmount(transactionRequest.getAmount());
         transaction.setDescription(transactionRequest.getDescription());
+        transaction.setTransactionDate(LocalDateTime.now());
         
         switch(transactionRequest.getTransactionType()) {
             case DEPOSIT -> handleDeposit(transactionRequest, transaction);
@@ -72,7 +89,7 @@ public class TransactionServiceImpl implements TransactionService {
         Account sourceAccount = accountRepo.findByAccountNumber(transactionRequest.getAccountNumber()).orElseThrow(()->new NotFoundException("Account not found"));
         Account destination = accountRepo.findByAccountNumber(transactionRequest.getDestinationAccountNumber()).orElseThrow(()->new NotFoundException("Destination Account not found"));
 
-        if(sourceAccount.getBalance().compareTo(destination.getBalance()) < 0) {
+        if(sourceAccount.getBalance().compareTo(transactionRequest.getAmount()) < 0) {
             throw new InsufficientBalanceException("Insufficient balance");
         }
 
@@ -84,7 +101,7 @@ public class TransactionServiceImpl implements TransactionService {
         destination.setBalance(destination.getBalance().add(transactionRequest.getAmount()));
         accountRepo.save(destination);
 
-        transaction.setId(sourceAccount.getId());
+        transaction.setAccount(sourceAccount);
         transaction.setSourceAccount(sourceAccount.getAccountNumber());
         transaction.setDestinationAccount(destination.getAccountNumber());
     }
@@ -92,7 +109,11 @@ public class TransactionServiceImpl implements TransactionService {
     private void handleWithdraw(TransactionRequest transactionRequest, Transaction transaction) {
         Account account = accountRepo.findByAccountNumber(transactionRequest.getAccountNumber()).orElseThrow(()->new NotFoundException("Account not found"));
 
-        account.setBalance(account.getBalance().add(transactionRequest.getAmount()));
+        if ((account.getBalance().compareTo(transactionRequest.getAmount()) < 0)) {
+            throw new InsufficientBalanceException("Insufficient balance");
+        }
+
+        account.setBalance(account.getBalance().subtract(transactionRequest.getAmount()));
         transaction.setAccount(account);
         accountRepo.save(account);
     }
@@ -100,10 +121,7 @@ public class TransactionServiceImpl implements TransactionService {
     private void handleDeposit(TransactionRequest transactionRequest, Transaction transaction) {
         Account account = accountRepo.findByAccountNumber(transactionRequest.getAccountNumber()).orElseThrow(()->new NotFoundException("Account not found"));
 
-        if ((account.getBalance().compareTo(transactionRequest.getAmount()) < 0)) {
-            throw new InsufficientBalanceException("Insufficient balance");
-        }
-        account.setBalance(account.getBalance().subtract(transactionRequest.getAmount()));
+        account.setBalance(account.getBalance().add(transactionRequest.getAmount()));
         transaction.setAccount(account);
         accountRepo.save(account);
     }
@@ -163,24 +181,47 @@ public class TransactionServiceImpl implements TransactionService {
             User receiver = destination.getUser();
 
             Map<String,Object> receiverVariables = new HashMap<>();
-            templateVariables.put("name", receiver.getFirstName());
-            templateVariables.put("amount", saveTxn.getAmount());
-            templateVariables.put("accountNumber", destination.getAccountNumber());
-            templateVariables.put("balance", destination.getBalance());
+            receiverVariables.put("name", receiver.getFirstName());
+            receiverVariables.put("amount", saveTxn.getAmount());
+            receiverVariables.put("accountNumber", destination.getAccountNumber());
+            receiverVariables.put("balance", destination.getBalance());
 
             NotificationDTO notificationEmailTosendToReceiver = NotificationDTO.builder()
                     .subject("Credit Alert")
                     .recipient(receiver.getEmail())
                     .templateName("credit-alert")
-                    .templateVariables(templateVariables)
+                    .templateVariables(receiverVariables)
                     .build();
-            notificationService.sendEmail(notificationEmailTosend ,user);
+            notificationService.sendEmail(notificationEmailTosendToReceiver ,receiver);
         }
     }
 
     @Override
     @Transactional
     public Response<List<TransactionDTO>> getTransactionForMyAccount(String accountNumber, int page, int size) {
-        return null;
+        User user = userService.getCurrentloggingUser();
+
+        Account account = accountRepo.findByAccountNumber(accountNumber).orElseThrow(()->new NotFoundException("Account not found"));
+
+        if(!account.getUser().getId().equals(user.getId())) {
+            throw new BadRequestException("Account does not belong to this account");
+        }
+
+        Pageable pageable = PageRequest.of(page, size , Sort.by("transactionDate").descending());
+        Page<Transaction> txns =transactionRepo.findByAccount_AccountNumber(accountNumber , pageable);
+        List<TransactionDTO> transactionDTOS = txns.getContent().stream()
+                .map(transactionMapper::toTransactionDTO).toList();
+
+        return Response.<List<TransactionDTO>>builder()
+                .statusCode(HttpStatus.OK.value())
+                .message("Transactions retrieved")
+                .data(transactionDTOS)
+                .meta(Map.of(
+                        "currentPage",txns.getNumber(),
+                        "totalItems",txns.getTotalElements(),
+                        "totalPages",txns.getTotalPages(),
+                        "pageSize",txns.getSize()
+                ))
+                .build();
     }
 }
