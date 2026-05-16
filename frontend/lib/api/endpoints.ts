@@ -21,7 +21,7 @@ export const API_ENDPOINT = {
   transactions: {
     create: "/transactions",
     byAccountNumber: (accountNumber: string) =>
-      `/transactions/account/${accountNumber}`,
+      `/transactions/${accountNumber}`,
   },
 
   roles: {

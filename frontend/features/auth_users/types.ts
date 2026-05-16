@@ -14,7 +14,7 @@ export interface RegistrationRequest {
   email: string;
   phoneNumber?: string;
   password: string;
-  role?: string[];
+  roles?: string[];
 }
 
 export interface ForgotPasswordRequest {

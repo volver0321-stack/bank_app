@@ -1,0 +1,1 @@
+export type AuditTotals = Record<string, number>;
