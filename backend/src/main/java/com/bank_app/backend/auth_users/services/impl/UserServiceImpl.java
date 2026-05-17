@@ -6,6 +6,7 @@ import com.bank_app.backend.auth_users.entity.User;
 import com.bank_app.backend.auth_users.mapper.UserMapper;
 import com.bank_app.backend.auth_users.repo.UserRepo;
 import com.bank_app.backend.auth_users.services.UserService;
+import com.bank_app.backend.aws.S3Service;
 import com.bank_app.backend.exceptions.BadRequestException;
 import com.bank_app.backend.exceptions.NotFoundException;
 import com.bank_app.backend.notification.dto.NotificationDTO;
@@ -22,10 +23,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
@@ -39,6 +36,7 @@ public class UserServiceImpl implements UserService {
     private final NotificationService notificationService;
     private final PasswordEncoder passwordEncoder;
     private final UserMapper userMapper;
+    private final S3Service s3Service;
 
     @Override
     public User getCurrentloggingUser() {
@@ -56,6 +54,12 @@ public class UserServiceImpl implements UserService {
     public Response<UserDTO> getMyProfiles() {
         User user = getCurrentloggingUser();
         UserDTO userDTO = userMapper.toDto(user);
+
+        if (user.getProfilePictureUrl() != null && !user.getProfilePictureUrl().isEmpty()) {
+            String presignedUrl = s3Service.generatePresignedUrl(user.getProfilePictureUrl());
+            userDTO.setProfilePictureUrl(presignedUrl);
+        }
+
         return Response.<UserDTO>builder()
                 .statusCode(HttpStatus.OK.value())
                 .message("User retrieved")
@@ -100,7 +104,7 @@ public class UserServiceImpl implements UserService {
         NotificationDTO notificationDTO = NotificationDTO.builder()
                 .recipient(user.getEmail())
                 .subject("Your Password was successfully changed")
-                .templateName("password-change")
+                .templateName("password-update-confirmation")
                 .templateVariables(vars)
                 .build();
 
@@ -116,40 +120,25 @@ public class UserServiceImpl implements UserService {
     public Response<?> uploadProfilePicture(MultipartFile file) {
         User user = getCurrentloggingUser();
 
-        try {
-            String updateDir = "uploads/profile-pictures/";
-            Path uploadPath = Paths.get(updateDir);
-            if (!Files.exists(uploadPath)) {
-                Files.createDirectories(uploadPath);
-            }
+        String oldProfilePictureKey = user.getProfilePictureUrl();
 
-            if (user.getProfilePictureUrl() != null && !user.getProfilePictureUrl().isEmpty()) {
-                Path oldFile = Paths.get(user.getProfilePictureUrl());
-                if (Files.exists(oldFile)) {
-                    Files.delete(oldFile);
-                }
-            }
-            String originalFileName = file.getOriginalFilename();
-            String fileExtension = "";
-            if (originalFileName != null && originalFileName.contains(".")) {
-                fileExtension = originalFileName.substring(originalFileName.lastIndexOf("."));
-            }
-            String newFileName = UUID.randomUUID() + fileExtension;
-            Path filePath = uploadPath.resolve(newFileName);
-
-            Files.copy(file.getInputStream(), filePath);
-
-            String fileUrl = updateDir + newFileName;
-
-            user.setProfilePictureUrl(fileUrl);
-            userRepo.save(user);
-            return Response.builder()
-                    .statusCode(HttpStatus.OK.value())
-                    .message("Profile picture upload successfully")
-                    .build();
-
-        } catch (IOException e) {
-            throw new RuntimeException(e.getMessage());
+        String originalFilename = file.getOriginalFilename();
+        String fileExtension = "";
+        if (originalFilename != null && originalFilename.contains(".")) {
+            fileExtension = originalFilename.substring(originalFilename.lastIndexOf("."));
         }
+
+        String key = "users/" + user.getId() + "/profile-picture/" + UUID.randomUUID() + fileExtension;
+        String profilePictureKey = s3Service.uploadFile(file, key);
+
+        user.setProfilePictureUrl(profilePictureKey);
+        userRepo.save(user);
+
+        s3Service.deleteFile(oldProfilePictureKey);
+
+        return Response.builder()
+                .statusCode(HttpStatus.OK.value())
+                .message("Profile Picture Uploaded Successfully")
+                .build();
     }
 }

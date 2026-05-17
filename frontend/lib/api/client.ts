@@ -1,5 +1,5 @@
 import axios, { AxiosError } from 'axios';
-import { getToken } from '../auth/token';
+import { clearAuth, getToken } from '../auth/token';
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_ENDPOINT ?? 'http://localhost:8080/api/';
 
@@ -23,6 +23,14 @@ apiClient.interceptors.request.use((config) => {
 apiClient.interceptors.response.use(
   (response) => response,
   (error : AxiosError<{message: string}>) => {
+    if (error.response?.status === 401) {
+      clearAuth();
+
+      if (typeof window !== 'undefined') {
+        window.location.href = '/login';
+      }
+    }
+
     const message = 
     error.response?.data?.message ??
     error.message ??

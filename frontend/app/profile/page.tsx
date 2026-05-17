@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { type ChangeEvent, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 
 import {
@@ -17,7 +17,6 @@ import type { Transaction } from "@/features/transaction/types";
 import { getMe, uploadProfilePicture } from "@/features/users/api";
 import type { User } from "@/features/users/types";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 
 const formatDate = (value?: string) => {
   if (!value) return "-";
@@ -41,7 +40,7 @@ const ProfilePage = () => {
   const [user, setUser] = useState<User | null>(null);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [profilePicture, setProfilePicture] = useState<File | null>(null);
+  const profilePictureInputRef = useRef<HTMLInputElement | null>(null);
   const [error, setError] = useState("");
   const [pictureMessage, setPictureMessage] = useState("");
   const [pictureError, setPictureError] = useState("");
@@ -81,23 +80,26 @@ const ProfilePage = () => {
     loadProfile();
   }, []);
 
-  async function handleProfilePictureUpload() {
-    if (!profilePicture) return;
+  async function handleProfilePictureChange(
+    event: ChangeEvent<HTMLInputElement>,
+  ) {
+    const selectedFile = event.currentTarget.files?.[0];
+    if (!selectedFile) return;
 
     setPictureError("");
     setPictureMessage("");
     setUploadingPicture(true);
 
     try {
-      await uploadProfilePicture(profilePicture);
+      await uploadProfilePicture(selectedFile);
       const response = await getMe();
       setUser(response.data ?? null);
-      setProfilePicture(null);
       setPictureMessage("プロフィール画像を更新しました");
     } catch {
       setPictureError("プロフィール画像の更新に失敗しました");
     } finally {
       setUploadingPicture(false);
+      event.currentTarget.value = "";
     }
   }
 
@@ -139,7 +141,9 @@ const ProfilePage = () => {
                   </div>
                   <div>
                     <p className="font-medium">
-                      {[user.lastName, user.firstName].filter(Boolean).join(" ")}
+                      {[user.lastName, user.firstName]
+                        .filter(Boolean)
+                        .join(" ")}
                     </p>
                     <p className="text-sm text-muted-foreground">
                       {user.email}
@@ -172,21 +176,20 @@ const ProfilePage = () => {
                 <section className="space-y-3">
                   <h2 className="text-sm font-medium">プロフィール画像</h2>
                   <div className="space-y-3">
-                    <Input
+                    {/* Profile image changes upload immediately after file selection. */}
+                    <input
+                      ref={profilePictureInputRef}
                       type="file"
                       accept="image/*"
-                      onChange={(event) => {
-                        setPictureError("");
-                        setPictureMessage("");
-                        setProfilePicture(event.target.files?.[0] ?? null);
-                      }}
+                      className="hidden"
+                      onChange={handleProfilePictureChange}
                     />
                     <Button
                       type="button"
-                      onClick={handleProfilePictureUpload}
-                      disabled={!profilePicture || uploadingPicture}
+                      onClick={() => profilePictureInputRef.current?.click()}
+                      disabled={uploadingPicture}
                     >
-                      {uploadingPicture ? "更新中..." : "画像を更新"}
+                      {uploadingPicture ? "更新中..." : "画像を変更"}
                     </Button>
                     {pictureMessage && (
                       <p className="text-sm text-muted-foreground">
@@ -194,9 +197,7 @@ const ProfilePage = () => {
                       </p>
                     )}
                     {pictureError && (
-                      <p className="text-sm text-destructive">
-                        {pictureError}
-                      </p>
+                      <p className="text-sm text-destructive">{pictureError}</p>
                     )}
                   </div>
                 </section>
